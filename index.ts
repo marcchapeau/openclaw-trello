@@ -7,8 +7,11 @@ function makeFetcher(apiKey: string, token: string) {
   return async function trelloFetch(path: string, method = "GET", body?: Record<string, string>): Promise<unknown> {
     const sep = path.includes("?") ? "&" : "?";
     const url = `${BASE_URL}${path}${sep}key=${apiKey}&token=${token}`;
-    const opts: RequestInit = { method, headers: { "Content-Type": "application/json" } };
-    if (body) opts.body = JSON.stringify(body);
+    const opts: RequestInit = { method };
+    if (body) {
+      opts.headers = { "Content-Type": "application/json" };
+      opts.body = JSON.stringify(body);
+    }
     const res = await fetch(url, opts);
     if (!res.ok) throw new Error(`Trello API error ${res.status} on ${method} ${path}`);
     return res.json();
@@ -23,22 +26,15 @@ export default definePluginEntry({
   id: "openclaw-trello",
   name: "Trello",
   description: "Native Trello tools for OpenClaw — list boards, create/move cards, add comments, manage checklists.",
-  configSchema: {
-    safeParse: (v) => {
-      const val = v as Record<string, unknown>;
-      if (!val?.apiKey || typeof val.apiKey !== "string") {
-        return { success: false, error: { message: "apiKey must be a non-empty string" } };
-      }
-      if (!val?.token || typeof val.token !== "string") {
-        return { success: false, error: { message: "token must be a non-empty string" } };
-      }
-      return { success: true, data: val };
-    }
-  },
   register(api) {
     const cfg = api.pluginConfig as Record<string, string> | undefined;
     const apiKey = cfg?.apiKey ?? process.env.TRELLO_API_KEY ?? "";
     const token = cfg?.token ?? process.env.TRELLO_TOKEN ?? "";
+
+    if (!apiKey || !token) {
+      console.warn("[openclaw-trello] Missing credentials. Set apiKey/token in plugin config or TRELLO_API_KEY/TRELLO_TOKEN env vars.");
+    }
+
     const fetch = makeFetcher(apiKey, token);
 
     api.registerTool({
@@ -127,7 +123,7 @@ export default definePluginEntry({
       execute: async (_id, p) => {
         const { cardId, name, desc, closed } = p as { cardId: string; name?: string; desc?: string; closed?: boolean };
         const fields: Record<string, string> = {};
-        if (name) fields.name = name;
+        if (name !== undefined) fields.name = name;
         if (desc !== undefined) fields.desc = desc;
         if (typeof closed === "boolean") fields.closed = String(closed);
         return jsonResult(await fetch(`/cards/${cardId}`, "PUT", fields));

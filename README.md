@@ -42,6 +42,10 @@ export TRELLO_TOKEN="your-trello-token"
 
 The `config` block in `openclaw.json` takes precedence over environment variables.
 
+### Security note
+
+The Trello API requires credentials as URL query parameters. Generate a token with the minimum permissions needed (read + write) and avoid using admin-level tokens.
+
 ## Tools
 
 | Tool | Description |
