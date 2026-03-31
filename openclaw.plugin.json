@@ -2,6 +2,9 @@
   "id": "openclaw-trello",
   "name": "Trello",
   "description": "Native Trello tools for OpenClaw — list boards, create/move cards, add comments, manage checklists.",
+  "providerAuthEnvVars": {
+    "trello": ["TRELLO_API_KEY", "TRELLO_TOKEN"]
+  },
   "contracts": {
     "tools": [
       "trello_list_boards",
@@ -20,12 +23,12 @@
     "type": "object",
     "properties": {
       "apiKey": {
-        "type": ["string", "object"],
-        "description": "Trello API key (plain string or SecretRef). Get yours at https://trello.com/app-key"
+        "type": "string",
+        "description": "Trello API key. Get yours at https://trello.com/app-key"
       },
       "token": {
-        "type": ["string", "object"],
-        "description": "Trello token (plain string or SecretRef). Generate at https://trello.com/app-key (click Token)"
+        "type": "string",
+        "description": "Trello token. Generate at https://trello.com/app-key (click Token)"
       }
     },
     "additionalProperties": false
