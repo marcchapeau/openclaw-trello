@@ -5,6 +5,20 @@
   "providerAuthEnvVars": {
     "trello": ["TRELLO_API_KEY", "TRELLO_TOKEN"]
   },
+  "uiHints": {
+    "apiKey": {
+      "label": "Trello API Key",
+      "help": "Trello API key (fallback: TRELLO_API_KEY env var).",
+      "sensitive": true,
+      "placeholder": "c97f..."
+    },
+    "token": {
+      "label": "Trello Token",
+      "help": "Trello token (fallback: TRELLO_TOKEN env var).",
+      "sensitive": true,
+      "placeholder": "ATTA..."
+    }
+  },
   "contracts": {
     "tools": [
       "trello_list_boards",
