@@ -1,7 +1,7 @@
 {
   "name": "openclaw-trello",
-  "version": "1.0.2",
-  "description": "Native Trello tools for OpenClaw — list boards, create/move cards, add comments, manage checklists.",
+  "version": "1.0.3",
+  "description": "Native Trello tools for OpenClaw \u2014 list boards, create/move cards, add comments, manage checklists.",
   "type": "module",
   "homepage": "https://github.com/marcchapeau/openclaw-trello",
   "repository": {
@@ -19,7 +19,7 @@
       "./index.ts"
     ],
     "compat": {
-      "pluginApi": "2026.3"
+      "pluginApi": "2026.3.28"
     },
     "build": {
       "openclawVersion": "2026.3.28"
