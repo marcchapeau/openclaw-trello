@@ -14,7 +14,7 @@
         "description": "Trello token. Generate at https://trello.com/app-key (click Token)"
       }
     },
-    "required": ["apiKey", "token"],
+
     "additionalProperties": false
   }
 }
