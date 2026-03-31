@@ -1,6 +1,6 @@
 {
   "name": "openclaw-trello",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Native Trello tools for OpenClaw — list boards, create/move cards, add comments, manage checklists.",
   "type": "module",
   "homepage": "https://github.com/marcchapeau/openclaw-trello",
@@ -9,9 +9,15 @@
     "url": "https://github.com/marcchapeau/openclaw-trello.git"
   },
   "license": "MIT",
-  "keywords": ["openclaw", "trello", "plugin"],
+  "keywords": [
+    "openclaw",
+    "trello",
+    "plugin"
+  ],
   "openclaw": {
-    "extensions": ["./index.ts"]
+    "extensions": [
+      "./index.ts"
+    ]
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.0",
