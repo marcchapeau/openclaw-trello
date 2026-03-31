@@ -31,6 +31,17 @@ Add your Trello credentials to `~/.openclaw/openclaw.json`:
 
 Get your credentials at [https://trello.com/app-key](https://trello.com/app-key).
 
+### Alternative: environment variables
+
+As a fallback, the plugin also reads credentials from environment variables:
+
+```bash
+export TRELLO_API_KEY="your-trello-api-key"
+export TRELLO_TOKEN="your-trello-token"
+```
+
+The `config` block in `openclaw.json` takes precedence over environment variables.
+
 ## Tools
 
 | Tool | Description |

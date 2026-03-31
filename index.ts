@@ -1,7 +1,18 @@
 import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
 import { Type } from "@sinclair/typebox";
+// @ts-ignore — internal SDK path
+import { resolveSecretRefString } from "openclaw/plugin-sdk/src/secrets/resolve.js";
 
 const BASE_URL = "https://api.trello.com/1";
+
+/** Accept either a plain string or a SecretRef object */
+type SecretInput = string | { source: string; provider: string; id: string };
+
+async function resolveSecret(value: SecretInput, config: unknown): Promise<string> {
+  if (typeof value === "string") return value;
+  // It's a SecretRef object — resolve via OpenClaw SDK
+  return resolveSecretRefString(value, { config });
+}
 
 function makeFetcher(apiKey: string, token: string) {
   return async function trelloFetch(path: string, method = "GET", body?: Record<string, string>): Promise<unknown> {
@@ -26,44 +37,54 @@ export default definePluginEntry({
   configSchema: {
     safeParse: (v) => {
       const val = v as Record<string, unknown>;
-      if (typeof val?.apiKey !== "string" || !val.apiKey) {
+      if (!val?.apiKey && !val?.apiKey) {
         return { success: false, error: { message: "plugins.entries.openclaw-trello.config.apiKey is required" } };
       }
-      if (typeof val?.token !== "string" || !val.token) {
+      if (!val?.token) {
         return { success: false, error: { message: "plugins.entries.openclaw-trello.config.token is required" } };
       }
       return { success: true, data: val };
     }
   },
   register(api) {
-    const cfg = api.pluginConfig as Record<string, string> | undefined;
-    const apiKey = cfg?.apiKey ?? process.env.TRELLO_API_KEY ?? "";
-    const token = cfg?.token ?? process.env.TRELLO_TOKEN ?? "";
+    const cfg = api.pluginConfig as Record<string, SecretInput> | undefined;
+    const rawApiKey = cfg?.apiKey ?? process.env.TRELLO_API_KEY ?? "";
+    const rawToken = cfg?.token ?? process.env.TRELLO_TOKEN ?? "";
 
-    if (!apiKey || !token) {
-      api.logger.warn("Trello plugin: no credentials found. Set plugins.entries.openclaw-trello.config.apiKey and .token");
-      return;
+    // Lazily resolve credentials (supports both plain strings and SecretRefs)
+    let fetcherPromise: Promise<ReturnType<typeof makeFetcher>> | null = null;
+    function getFetcher() {
+      if (!fetcherPromise) {
+        fetcherPromise = Promise.all([
+          resolveSecret(rawApiKey, api.config),
+          resolveSecret(rawToken, api.config),
+        ]).then(([apiKey, token]) => {
+          if (!apiKey || !token) throw new Error("Trello plugin: could not resolve credentials");
+          return makeFetcher(apiKey, token);
+        });
+      }
+      return fetcherPromise;
     }
-
-    const fetch = makeFetcher(apiKey, token);
 
     api.registerTool({
       name: "trello_list_boards",
       label: "Trello: List Boards",
       description: "List all Trello boards accessible with the configured credentials.",
       parameters: Type.Object({}, { additionalProperties: false }),
-      execute: async () => jsonResult(await fetch("/members/me/boards?fields=id,name,shortUrl"))
+      execute: async () => {
+        const fetch = await getFetcher();
+        return jsonResult(await fetch("/members/me/boards?fields=id,name,shortUrl"));
+      }
     });
 
     api.registerTool({
       name: "trello_list_lists",
       label: "Trello: List Columns",
       description: "List all open columns (lists) in a Trello board.",
-      parameters: Type.Object({
-        boardId: Type.String({ description: "Board ID." })
-      }, { additionalProperties: false }),
+      parameters: Type.Object({ boardId: Type.String({ description: "Board ID." }) }, { additionalProperties: false }),
       execute: async (_id, p) => {
         const { boardId } = p as { boardId: string };
+        const fetch = await getFetcher();
         return jsonResult(await fetch(`/boards/${boardId}/lists?filter=open&fields=id,name,pos`));
       }
     });
@@ -72,11 +93,10 @@ export default definePluginEntry({
       name: "trello_list_cards",
       label: "Trello: List Cards",
       description: "List all open cards in a Trello column (list).",
-      parameters: Type.Object({
-        listId: Type.String({ description: "Column (list) ID." })
-      }, { additionalProperties: false }),
+      parameters: Type.Object({ listId: Type.String({ description: "Column (list) ID." }) }, { additionalProperties: false }),
       execute: async (_id, p) => {
         const { listId } = p as { listId: string };
+        const fetch = await getFetcher();
         return jsonResult(await fetch(`/lists/${listId}/cards?fields=id,name,desc,dateLastActivity,shortUrl`));
       }
     });
@@ -92,6 +112,7 @@ export default definePluginEntry({
       }, { additionalProperties: false }),
       execute: async (_id, p) => {
         const { listId, name, desc } = p as { listId: string; name: string; desc?: string };
+        const fetch = await getFetcher();
         return jsonResult(await fetch("/cards", "POST", { idList: listId, name, ...(desc ? { desc } : {}) }));
       }
     });
@@ -106,6 +127,7 @@ export default definePluginEntry({
       }, { additionalProperties: false }),
       execute: async (_id, p) => {
         const { cardId, listId } = p as { cardId: string; listId: string };
+        const fetch = await getFetcher();
         return jsonResult(await fetch(`/cards/${cardId}`, "PUT", { idList: listId }));
       }
     });
@@ -120,6 +142,7 @@ export default definePluginEntry({
       }, { additionalProperties: false }),
       execute: async (_id, p) => {
         const { cardId, text } = p as { cardId: string; text: string };
+        const fetch = await getFetcher();
         return jsonResult(await fetch(`/cards/${cardId}/actions/comments`, "POST", { text }));
       }
     });
@@ -140,6 +163,7 @@ export default definePluginEntry({
         if (name) fields.name = name;
         if (desc !== undefined) fields.desc = desc;
         if (typeof closed === "boolean") fields.closed = String(closed);
+        const fetch = await getFetcher();
         return jsonResult(await fetch(`/cards/${cardId}`, "PUT", fields));
       }
     });
@@ -154,6 +178,7 @@ export default definePluginEntry({
       }, { additionalProperties: false }),
       execute: async (_id, p) => {
         const { cardId, name } = p as { cardId: string; name: string };
+        const fetch = await getFetcher();
         return jsonResult(await fetch(`/cards/${cardId}/checklists`, "POST", { name }));
       }
     });
@@ -168,6 +193,7 @@ export default definePluginEntry({
       }, { additionalProperties: false }),
       execute: async (_id, p) => {
         const { checklistId, name } = p as { checklistId: string; name: string };
+        const fetch = await getFetcher();
         return jsonResult(await fetch(`/checklists/${checklistId}/checkItems`, "POST", { name }));
       }
     });
@@ -183,6 +209,7 @@ export default definePluginEntry({
       }, { additionalProperties: false }),
       execute: async (_id, p) => {
         const { cardId, checkItemId, complete = true } = p as { cardId: string; checkItemId: string; complete?: boolean };
+        const fetch = await getFetcher();
         return jsonResult(await fetch(`/cards/${cardId}/checkItem/${checkItemId}`, "PUT", { state: complete ? "complete" : "incomplete" }));
       }
     });
