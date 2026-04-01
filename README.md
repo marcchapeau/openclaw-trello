@@ -1,6 +1,6 @@
 # openclaw-trello
 
-Native Trello tools for [OpenClaw](https://openclaw.ai). Adds 10 first-class agent tools to interact with Trello — no curl, no shell scripts.
+Native Trello tools for [OpenClaw](https://openclaw.ai). Adds 13 first-class agent tools to interact with Trello — no curl, no shell scripts.
 
 ## Install
 
@@ -60,6 +60,9 @@ The Trello API requires credentials as URL query parameters. Generate a token wi
 | `trello_checklist_create` | Create a checklist on a card |
 | `trello_checklist_item_add` | Add an item to a checklist |
 | `trello_checklist_item_complete` | Mark a checklist item as complete |
+| `trello_get_member` | Resolve a username or member ID to a member object |
+| `trello_card_add_member` | Assign a member to a card |
+| `trello_card_remove_member` | Remove a member from a card |
 
 ## License
 
