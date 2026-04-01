@@ -78,6 +78,7 @@ clawhub package publish /tmp/trello-pkg \
   --tags "latest,trello" \
   --changelog "<what changed>" \
   --source-repo marcchapeau/openclaw-trello \
+  --source-commit $(git rev-parse v<version>) \
   --source-ref v<version>
 
 # Clean up
