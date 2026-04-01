@@ -1,7 +1,7 @@
 {
   "id": "openclaw-trello",
   "name": "Trello",
-  "description": "Native Trello tools for OpenClaw — list boards, create/move cards, add comments, manage checklists.",
+  "description": "Native Trello tools for OpenClaw — list boards, create/move/assign cards, add comments, manage checklists.",
   "providerAuthEnvVars": {
     "trello": ["TRELLO_API_KEY", "TRELLO_TOKEN"]
   },
@@ -30,7 +30,10 @@
       "trello_update_card",
       "trello_checklist_create",
       "trello_checklist_item_add",
-      "trello_checklist_item_complete"
+      "trello_checklist_item_complete",
+      "trello_get_member",
+      "trello_card_add_member",
+      "trello_card_remove_member"
     ]
   },
   "configSchema": {

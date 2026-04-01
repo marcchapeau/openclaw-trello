@@ -172,5 +172,51 @@ export default definePluginEntry({
         return jsonResult(await fetch(`/cards/${cardId}/checkItem/${checkItemId}`, "PUT", { state: complete ? "complete" : "incomplete" }));
       }
     });
+
+    api.registerTool({
+      name: "trello_get_member",
+      label: "Trello: Get Member",
+      description: "Resolve a Trello username or member ID to a member object (id, username, fullName). Useful to get a memberId before assigning.",
+      parameters: Type.Object({
+        usernameOrId: Type.String({ description: "Trello username or member ID." })
+      }, { additionalProperties: false }),
+      execute: async (_id, p) => {
+        const { usernameOrId } = p as { usernameOrId: string };
+        return jsonResult(await fetch(`/members/${usernameOrId}?fields=id,username,fullName`));
+      }
+    });
+
+    api.registerTool({
+      name: "trello_card_add_member",
+      label: "Trello: Add Member to Card",
+      description: "Assign a member to a Trello card.",
+      parameters: Type.Object({
+        cardId: Type.String({ description: "Card ID." }),
+        memberId: Type.String({ description: "Member ID to assign." })
+      }, { additionalProperties: false }),
+      execute: async (_id, p) => {
+        const { cardId, memberId } = p as { cardId: string; memberId: string };
+        return jsonResult(await fetch(`/cards/${cardId}/idMembers`, "POST", { value: memberId }));
+      }
+    });
+
+    api.registerTool({
+      name: "trello_card_remove_member",
+      label: "Trello: Remove Member from Card",
+      description: "Remove a member assignment from a Trello card.",
+      parameters: Type.Object({
+        cardId: Type.String({ description: "Card ID." }),
+        memberId: Type.String({ description: "Member ID to remove." })
+      }, { additionalProperties: false }),
+      execute: async (_id, p) => {
+        const { cardId, memberId } = p as { cardId: string; memberId: string };
+        // DELETE with body requires a custom fetch — inline here
+        const sep = `/cards/${cardId}/idMembers/${memberId}`.includes("?") ? "&" : "?";
+        const url = `${BASE_URL}/cards/${cardId}/idMembers/${memberId}${sep}key=${apiKey}&token=${token}`;
+        const res = await globalThis.fetch(url, { method: "DELETE" });
+        if (!res.ok) throw new Error(`Trello API error ${res.status} on DELETE /cards/${cardId}/idMembers/${memberId}`);
+        return jsonResult(await res.json());
+      }
+    });
   }
 });
